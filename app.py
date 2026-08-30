@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom CSS for Minimalist UI and Compact Calendar
+# Custom Zero-Lag Minimalist CSS
 st.markdown(
     """
 <style>
@@ -45,7 +45,7 @@ st.markdown(
         text-transform: uppercase;
     }
 
-    /* Google Calendar Frame */
+    /* Google Calendar Mini Card */
     .gcal-card {
         background: #ffffff;
         border: 1px solid #dadce0;
@@ -66,13 +66,12 @@ st.markdown(
         margin-bottom: 6px;
     }
 
-    /* Calendar Day Button Base */
+    /* Mini Calendar Buttons */
     div.gcal-card div[data-testid="stHorizontalBlock"] button {
         background-color: transparent !important;
-        border: 1px solid transparent !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 6px !important;
         padding: 0px !important;
-        font-size: 14px !important;
         height: 34px !important;
         width: 100% !important;
         min-height: 34px !important;
@@ -371,7 +370,7 @@ def get_backlog_dates_for(selected_dt):
   return [backlog_pool[target_b1_idx], backlog_pool[target_b2_idx]]
 
 
-# Mini Google Calendar with Guaranteed Red / Green Number Colors
+# Mini Google Calendar (Native Red / Green text formatting)
 def render_mini_gcal(
     active_dates_set, on_select_callback, key_prefix="cal", allow_all=False
 ):
@@ -417,8 +416,6 @@ def render_mini_gcal(
       unsafe_allow_html=True,
   )
 
-  css_rules = []
-
   for w_idx, week in enumerate(month_matrix):
     d_cols = st.columns(7)
     for i, day in enumerate(week):
@@ -432,25 +429,17 @@ def render_mini_gcal(
         has_item = d_str in active_dates_set
         btn_key = f"{key_prefix}_{d_str}_{w_idx}_{i}"
 
-        # Color: Pure Green if present, Pure Red if absent
-        color_hex = "#16a34a" if has_item else "#dc2626"
-        css_rules.append(
-            f'button[key="{btn_key}"] p, button[data-testid*="{btn_key}"] p,'
-            f' button[key="{btn_key}"] span, button[data-testid*="{btn_key}"]'
-            f" span {{ color: {color_hex} !important; font-weight: 800"
-            " !important; font-size: 14px !important; }"
-        )
+        # Pure text coloring using Streamlit markdown syntax
+        btn_label = f":green[**{day}**]" if has_item else f":red[**{day}**]"
 
-        if d_cols[i].button(str(day), key=btn_key, use_container_width=True):
+        if d_cols[i].button(
+            btn_label, key=btn_key, use_container_width=True
+        ):
           if allow_all or has_item:
             on_select_callback(d_obj if allow_all else d_str)
           else:
             st.toast(f"No content uploaded for {d_str} yet!", icon="🔴")
 
-  st.markdown(
-      f"<style>{''.join(css_rules)}</style>",
-      unsafe_allow_html=True,
-  )
   st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -780,7 +769,7 @@ elif st.session_state.screen == "ca_exam":
         st.rerun()
 
 # ----------------------------------------------------
-# 6. TO-DO & REVISION PLANNER
+# 6. TO-DO & REVISION PLANNER (FULL 3-CA REVISION TRACKING)
 # ----------------------------------------------------
 elif st.session_state.screen == "todo":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -824,9 +813,9 @@ elif st.session_state.screen == "todo":
     st.markdown(
         f"""
         <div class="todo-card" style="border-left: 5px solid #f9ab00;">
-            <h4 style="color:#b06000; margin:0 0 6px 0;">🔄 CA to Revise: Weekly Revision</h4>
+            <h4 style="color:#b06000; margin:0 0 6px 0;">🌟 Sunday Weekly Mega Revision</h4>
             <p style="margin:0; color:#202124; font-size:14px; line-height: 1.6;">
-                • Revise all CA covered from <strong>{monday_dt.strftime('%d %B')}</strong> to <strong>{saturday_dt.strftime('%d %B %Y')}</strong><br>
+                • Revise all <strong>Fresh & Backlog CA</strong> completed from <strong>{monday_dt.strftime('%d %B')}</strong> to <strong>{saturday_dt.strftime('%d %B %Y')}</strong>.<br>
                 • <em>No new fresh CA or backlog today.</em>
             </p>
         </div>
@@ -834,43 +823,60 @@ elif st.session_state.screen == "todo":
         unsafe_allow_html=True,
     )
   else:
-    backlog_days = get_backlog_dates_for(selected_dt)
+    # Today's Backlog dates
+    today_backlogs = get_backlog_dates_for(selected_dt)
     b1_str = (
-        backlog_days[0].strftime("%d %B %Y") if backlog_days else "1 June 2026"
+        today_backlogs[0].strftime("%d %B %Y")
+        if today_backlogs
+        else "1 June 2026"
     )
     b2_str = (
-        backlog_days[1].strftime("%d %B %Y") if backlog_days else "2 June 2026"
+        today_backlogs[1].strftime("%d %B %Y")
+        if today_backlogs
+        else "2 June 2026"
     )
 
+    # 1. Day-1 Spaced Revision (Yesterday's work)
     yest_dt = selected_dt - timedelta(days=1)
     if yest_dt.weekday() == 6:
       yest_dt = yest_dt - timedelta(days=1)
 
+    # 2. Day-3 Spaced Revision (3 days ago work)
     rep3_dt = selected_dt - timedelta(days=3)
     if rep3_dt.weekday() == 6:
       rep3_dt = rep3_dt - timedelta(days=1)
 
-    revision_items = []
+    revision_sections = []
+
+    # Format Day-1 Revision
     if yest_dt >= plan_start:
-      revision_items.append(
-          f"1. <strong>Day-1 Revision:</strong> {yest_dt.strftime('%d %B %Y')} CA"
-      )
-    if rep3_dt >= plan_start:
-      prefix = "2" if revision_items else "1"
-      revision_items.append(
-          f"{prefix}. <strong>Day-3 Revision:</strong>"
-          f" {rep3_dt.strftime('%d %B %Y')} CA"
+      yest_backlogs = get_backlog_dates_for(yest_dt)
+      yb_list = [b.strftime("%d %B %Y") for b in yest_backlogs]
+      yb_str = f" + Backlogs ({', '.join(yb_list)})" if yb_list else ""
+      revision_sections.append(
+          f"• <strong>Day-1 Revision (Done on {yest_dt.strftime('%d %B')}):</strong><br>"
+          f"&nbsp;&nbsp;&nbsp;&nbsp;↳ <em>{yest_dt.strftime('%d %B %Y')} Fresh CA{yb_str}</em>"
       )
 
-    if not revision_items:
-      revision_text = "<em>None (Fresh Start Day - No previous revisions)</em>"
+    # Format Day-3 Revision
+    if rep3_dt >= plan_start:
+      rep3_backlogs = get_backlog_dates_for(rep3_dt)
+      r3b_list = [b.strftime("%d %B %Y") for b in rep3_backlogs]
+      r3b_str = f" + Backlogs ({', '.join(r3b_list)})" if r3b_list else ""
+      revision_sections.append(
+          f"• <strong>Day-3 Revision (Done on {rep3_dt.strftime('%d %B')}):</strong><br>"
+          f"&nbsp;&nbsp;&nbsp;&nbsp;↳ <em>{rep3_dt.strftime('%d %B %Y')} Fresh CA{r3b_str}</em>"
+      )
+
+    if not revision_sections:
+      revision_html = "<em>None (Fresh Start Day - No previous revisions)</em>"
     else:
-      revision_text = "<br>".join(revision_items)
+      revision_html = "<br><br>".join(revision_sections)
 
     st.markdown(
         f"""
         <div class="todo-card" style="border-left: 5px solid #1a73e8;">
-            <h4 style="color:#1a73e8; margin:0 0 8px 0;">📖 CA to Do (3 Days Total):</h4>
+            <h4 style="color:#1a73e8; margin:0 0 8px 0;">📖 CA to Do Today (3 Days Total):</h4>
             <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
                 1. <strong>Today's Fresh CA:</strong> {selected_dt.strftime('%d %B %Y')}<br>
                 2. <strong>Backlog CA (Day 1):</strong> {b1_str}<br>
@@ -881,7 +887,7 @@ elif st.session_state.screen == "todo":
         <div class="todo-card" style="border-left: 5px solid #12b5cb;">
             <h4 style="color:#007b83; margin:0 0 8px 0;">🔄 CA to Revise:</h4>
             <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
-                {revision_text}
+                {revision_html}
             </p>
         </div>
         """,
