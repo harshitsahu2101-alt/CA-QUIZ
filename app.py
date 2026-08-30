@@ -16,11 +16,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom Compact Google Calendar & Minimalist App CSS
+# Custom CSS for Red/Green Date Numbers and Clean Layout
 st.markdown(
     """
 <style>
-    /* Suppress Streamlit default headers, deploy badges, and footers */
     header[data-testid="stHeader"], #MainMenu, footer, 
     div[data-testid="stToolbar"], div[data-testid="stDecoration"],
     [data-testid="stStatusWidget"], .stDeployButton, .viewerBadge_container__r5tak,
@@ -46,7 +45,7 @@ st.markdown(
         text-transform: uppercase;
     }
 
-    /* Authentic Compact Google Calendar Widget */
+    /* Google Calendar Widget Frame */
     .gcal-card {
         background: #ffffff;
         border: 1px solid #dadce0;
@@ -57,52 +56,35 @@ st.markdown(
         max-width: 440px;
     }
 
-    .gcal-month-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-family: 'Google Sans', Roboto, sans-serif;
-        font-weight: 600;
-        font-size: 15px;
-        color: #3c4043;
-        margin-bottom: 8px;
-    }
-
     .gcal-weekdays {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         text-align: center;
-        font-weight: 600;
-        font-size: 11px;
-        color: #70757a;
-        margin-bottom: 4px;
+        font-weight: 700;
+        font-size: 12px;
+        color: #5f6368;
+        margin-bottom: 6px;
     }
 
-    /* Mini Compact Calendar Day Buttons */
     div.gcal-card div[data-testid="stHorizontalBlock"] button {
         background-color: transparent !important;
-        color: #3c4043 !important;
-        border: none !important;
-        border-radius: 50% !important;
+        border: 1px solid transparent !important;
+        border-radius: 6px !important;
         padding: 0px !important;
-        font-size: 12px !important;
-        font-weight: 500 !important;
-        height: 32px !important;
-        width: 32px !important;
-        min-height: 32px !important;
-        max-height: 32px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        height: 34px !important;
+        width: 100% !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
         margin: 1px auto !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
     }
 
     div.gcal-card div[data-testid="stHorizontalBlock"] button:hover {
-        background-color: #f1f3f4 !important;
-        color: #1a73e8 !important;
+        background-color: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
     }
 
-    /* CBT Exam Header Banner */
     .cbt-banner {
         background-color: #1a73e8;
         color: white;
@@ -121,7 +103,7 @@ st.markdown(
         padding: 16px;
         border: 1px solid #dadce0;
         border-radius: 8px;
-        min-height: 260px;
+        min-height: 240px;
     }
 
     .palette-box {
@@ -131,7 +113,6 @@ st.markdown(
         padding: 10px;
     }
 
-    /* Learning & Summary Card */
     .learning-box {
         background: #f8fafc;
         border: 1px solid #cbd5e1;
@@ -148,7 +129,6 @@ st.markdown(
         color: #1a73e8;
     }
 
-    /* Flashcard Card Layout */
     .flashcard {
         background: #ffffff;
         border: 1.5px solid #1a73e8;
@@ -162,8 +142,8 @@ st.markdown(
         background: #ffffff;
         border-radius: 8px;
         border: 1px solid #dadce0;
-        padding: 12px 16px;
-        margin-bottom: 10px;
+        padding: 14px 18px;
+        margin-bottom: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
@@ -192,38 +172,49 @@ supabase = (
 def fetch_all_dates():
   if not supabase:
     return set(), set()
-  q_res = supabase.table("quizzes").select("quiz_date").execute()
-  v_res = supabase.table("vocab").select("vocab_date").execute()
-  q_dates = {item["quiz_date"] for item in q_res.data} if q_res.data else set()
-  v_dates = (
-      {item["vocab_date"] for item in v_res.data} if v_res.data else set()
-  )
-  return q_dates, v_dates
+  try:
+    q_res = supabase.table("quizzes").select("quiz_date").execute()
+    v_res = supabase.table("vocab").select("vocab_date").execute()
+    q_dates = (
+        {item["quiz_date"] for item in q_res.data} if q_res.data else set()
+    )
+    v_dates = (
+        {item["vocab_date"] for item in v_res.data} if v_res.data else set()
+    )
+    return q_dates, v_dates
+  except Exception:
+    return set(), set()
 
 
 @st.cache_data(ttl=300)
 def get_quiz_data(target_date):
-  res = (
-      supabase.table("quizzes")
-      .select("data")
-      .eq("quiz_date", str(target_date))
-      .execute()
-  )
-  if res.data and res.data[0].get("data"):
-    return json.loads(res.data[0]["data"])
+  try:
+    res = (
+        supabase.table("quizzes")
+        .select("data")
+        .eq("quiz_date", str(target_date))
+        .execute()
+    )
+    if res.data and res.data[0].get("data"):
+      return json.loads(res.data[0]["data"])
+  except Exception:
+    pass
   return []
 
 
 @st.cache_data(ttl=300)
 def get_vocab_data(target_date):
-  res = (
-      supabase.table("vocab")
-      .select("data")
-      .eq("vocab_date", str(target_date))
-      .execute()
-  )
-  if res.data and res.data[0].get("data"):
-    return json.loads(res.data[0]["data"])
+  try:
+    res = (
+        supabase.table("vocab")
+        .select("data")
+        .eq("vocab_date", str(target_date))
+        .execute()
+    )
+    if res.data and res.data[0].get("data"):
+      return json.loads(res.data[0]["data"])
+  except Exception:
+    pass
   return []
 
 
@@ -337,7 +328,7 @@ if "selected_ca_date" not in st.session_state:
 if "selected_vocab_date" not in st.session_state:
   st.session_state.selected_vocab_date = None
 if "selected_todo_date" not in st.session_state:
-  st.session_state.selected_todo_date = date.today()
+  st.session_state.selected_todo_date = date(2026, 9, 1)
 if "month_offset" not in st.session_state:
   st.session_state.month_offset = 0
 if "card_idx" not in st.session_state:
@@ -350,7 +341,33 @@ uploaded_ca_dates, uploaded_vocab_dates = fetch_all_dates()
 st.markdown('<div class="app-title">Banking Prep</div>', unsafe_allow_html=True)
 
 
-# Helper: Mini Google Calendar Widget
+# Backlog Sequence Calculator (Skips Sundays starting 1 June 2026)
+def get_backlog_dates_for(selected_dt):
+  plan_start = date(2026, 9, 1)
+  if selected_dt < plan_start or selected_dt.weekday() == 6:
+    return []
+
+  working_day_index = 0
+  curr = plan_start
+  while curr <= selected_dt:
+    if curr.weekday() != 6:
+      working_day_index += 1
+    curr += timedelta(days=1)
+
+  backlog_pool = []
+  b_curr = date(2026, 6, 1)
+  while len(backlog_pool) < (working_day_index * 2):
+    if b_curr.weekday() != 6:
+      backlog_pool.append(b_curr)
+    b_curr += timedelta(days=1)
+
+  target_b1_idx = (working_day_index - 1) * 2
+  target_b2_idx = target_b1_idx + 1
+
+  return [backlog_pool[target_b1_idx], backlog_pool[target_b2_idx]]
+
+
+# Mini Google Calendar (Red numbers for missing, Green numbers for present)
 def render_mini_gcal(
     active_dates_set, on_select_callback, key_prefix="cal", allow_all=False
 ):
@@ -366,7 +383,7 @@ def render_mini_gcal(
     curr_year -= 1
 
   month_name = calendar.month_name[curr_month]
-  cal_obj = calendar.Calendar(firstweekday=6)  # Sunday start like Google Cal
+  cal_obj = calendar.Calendar(firstweekday=6)
   month_matrix = cal_obj.monthdayscalendar(curr_year, curr_month)
 
   st.markdown('<div class="gcal-card">', unsafe_allow_html=True)
@@ -396,37 +413,37 @@ def render_mini_gcal(
       unsafe_allow_html=True,
   )
 
+  dynamic_styles = "<style>\n"
+
   for w_idx, week in enumerate(month_matrix):
     d_cols = st.columns(7)
     for i, day in enumerate(week):
       if day == 0:
         d_cols[i].markdown(
-            "<div style='height:32px;'></div>", unsafe_allow_html=True
+            "<div style='height:34px;'></div>", unsafe_allow_html=True
         )
       else:
         d_obj = date(curr_year, curr_month, day)
         d_str = f"{curr_year}-{curr_month:02d}-{day:02d}"
         has_item = d_str in active_dates_set
-        is_today = d_obj == today
+        btn_key = f"{key_prefix}_{d_str}_{w_idx}_{i}"
 
-        # Label styling: highlight uploaded or current day
-        if is_today:
-          label = f"🔵{day}" if not has_item else f"🟢{day}"
-        elif has_item:
-          label = f"🟢{day}"
-        else:
-          label = f"{day}"
+        text_color = "#16a34a" if has_item else "#dc2626"
+        dynamic_styles += f"""
+                button[key="{btn_key}"] p, button[data-testid*="{btn_key}"] p, button[key="{btn_key}"] div {{
+                    color: {text_color} !important;
+                    font-weight: 800 !important;
+                }}
+                """
 
-        if d_cols[i].button(
-            label,
-            key=f"{key_prefix}_{d_str}_{w_idx}_{i}",
-            use_container_width=True,
-        ):
+        if d_cols[i].button(str(day), key=btn_key, use_container_width=True):
           if allow_all or has_item:
             on_select_callback(d_obj if allow_all else d_str)
           else:
-            st.toast(f"No content uploaded for {d_str} yet!", icon="ℹ️")
+            st.toast(f"No content uploaded for {d_str} yet!", icon="🔴")
 
+  dynamic_styles += "</style>"
+  st.markdown(dynamic_styles, unsafe_allow_html=True)
   st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -449,7 +466,7 @@ if st.session_state.screen == "home":
       st.rerun()
 
 # ----------------------------------------------------
-# 2. VOCAB HUB (MINI CALENDAR + UPLOAD)
+# 2. VOCAB HUB (CALENDAR + UPLOAD)
 # ----------------------------------------------------
 elif st.session_state.screen == "vocab_hub":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -567,7 +584,7 @@ elif st.session_state.screen == "vocab_flashcards":
       st.rerun()
 
 # ----------------------------------------------------
-# 4. CA QUIZ HUB (MINI CALENDAR + UPLOAD)
+# 4. CA QUIZ HUB (CALENDAR + UPLOAD)
 # ----------------------------------------------------
 elif st.session_state.screen == "ca_hub":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -630,7 +647,7 @@ elif st.session_state.screen == "ca_hub":
   render_mini_gcal(uploaded_ca_dates, open_quiz, key_prefix="ca_cal")
 
 # ----------------------------------------------------
-# 5. CA CBT EXAM CONSOLE (ZERO LAG)
+# 5. CA CBT EXAM CONSOLE
 # ----------------------------------------------------
 elif st.session_state.screen == "ca_exam":
   target_date_str = st.session_state.selected_ca_date
@@ -756,7 +773,7 @@ elif st.session_state.screen == "ca_exam":
         st.rerun()
 
 # ----------------------------------------------------
-# 6. TO-DO & REVISION PLANNER (WITH INTERACTIVE GCAL)
+# 6. TO-DO & REVISION PLANNER (STRICT CA SCHEDULE ONLY)
 # ----------------------------------------------------
 elif st.session_state.screen == "todo":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -765,34 +782,54 @@ elif st.session_state.screen == "todo":
       st.session_state.screen = "home"
       st.rerun()
 
-  st.write("##### 📅 Select Any Date to View Targets")
+  st.write("##### 📅 Select Date to View CA Schedule")
 
   def select_todo_date(chosen_date):
     st.session_state.selected_todo_date = chosen_date
     st.rerun()
 
+  combined_uploaded_dates = uploaded_ca_dates.union(uploaded_vocab_dates)
   render_mini_gcal(
-      set(), select_todo_date, key_prefix="todo_cal", allow_all=True
+      combined_uploaded_dates,
+      select_todo_date,
+      key_prefix="todo_cal",
+      allow_all=True,
   )
 
   selected_dt = st.session_state.selected_todo_date
   is_sunday = selected_dt.weekday() == 6
+  plan_start = date(2026, 9, 1)
 
   st.markdown(
-      f"#### 🎯 Targets for **{selected_dt.strftime('%A, %d %B %Y')}**"
+      f"#### 🎯 CA Schedule for **{selected_dt.strftime('%A, %d %B %Y')}**"
   )
 
-  if is_sunday:
+  if selected_dt < plan_start:
+    st.info(
+        "ℹ️ The CA schedule starts on **Tuesday, 1 September 2026**. Select any"
+        " date from 1 Sept onwards."
+    )
+  elif is_sunday:
+    # Calculate Monday through Saturday of this week
+    monday_dt = selected_dt - timedelta(days=6)
+    saturday_dt = selected_dt - timedelta(days=1)
     st.markdown(
-        """
+        f"""
         <div class="todo-card" style="border-left: 5px solid #f9ab00;">
-            <h4 style="color:#b06000; margin:0 0 6px 0;">🌟 Sunday Comprehensive Revision</h4>
-            <p style="margin:0; color:#3c4043; font-size:14px;">No new daily CA today! Revise all Current Affairs and Vocab covered from <strong>Monday to Saturday</strong> this week.</p>
+            <h4 style="color:#b06000; margin:0 0 6px 0;">🔄 CA to Revise: Weekly Revision</h4>
+            <p style="margin:0; color:#202124; font-size:14px; line-height: 1.6;">
+                • Revise all CA from <strong>{monday_dt.strftime('%d %B')}</strong> to <strong>{saturday_dt.strftime('%d %B %Y')}</strong><br>
+                • <em>No new fresh CA or backlog today.</em>
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
   else:
+    backlog_days = get_backlog_dates_for(selected_dt)
+    b1_str = backlog_days[0].strftime("%d %B %Y") if backlog_days else "1 June 2026"
+    b2_str = backlog_days[1].strftime("%d %B %Y") if backlog_days else "2 June 2026"
+
     yest_dt = selected_dt - timedelta(days=1)
     if yest_dt.weekday() == 6:
       yest_dt = yest_dt - timedelta(days=1)
@@ -804,23 +841,20 @@ elif st.session_state.screen == "todo":
     st.markdown(
         f"""
         <div class="todo-card" style="border-left: 5px solid #1a73e8;">
-            <h5 style="color:#1967d2; margin:0 0 4px 0;">🎯 Target 1: Today's Fresh CA & Vocab</h5>
-            <p style="margin:0; color:#3c4043; font-size:13.5px;">Complete CA Quiz & Vocab for <strong>{selected_dt.strftime('%d %B %Y')}</strong>.</p>
+            <h4 style="color:#1a73e8; margin:0 0 8px 0;">📖 CA to Do (3 Days Total):</h4>
+            <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
+                1. <strong>Today's Fresh CA:</strong> {selected_dt.strftime('%d %B %Y')}<br>
+                2. <strong>Backlog CA (Day 1):</strong> {b1_str}<br>
+                3. <strong>Backlog CA (Day 2):</strong> {b2_str}
+            </p>
         </div>
         
         <div class="todo-card" style="border-left: 5px solid #12b5cb;">
-            <h5 style="color:#007b83; margin:0 0 4px 0;">🔁 Target 2: Day-1 Spaced Revision</h5>
-            <p style="margin:0; color:#3c4043; font-size:13.5px;">Revise CA Quiz & Vocab of <strong>{yest_dt.strftime('%d %B %Y')}</strong>.</p>
-        </div>
-        
-        <div class="todo-card" style="border-left: 5px solid #a142f4;">
-            <h5 style="color:#8430ce; margin:0 0 4px 0;">🔄 Target 3: Day-3 Spaced Revision</h5>
-            <p style="margin:0; color:#3c4043; font-size:13.5px;">Revise CA Quiz & Vocab of <strong>{rep3_dt.strftime('%d %B %Y')}</strong>.</p>
-        </div>
-
-        <div class="todo-card" style="border-left: 5px solid #fa7b17;">
-            <h5 style="color:#c53929; margin:0 0 4px 0;">📚 Target 4: Backlog Clearing</h5>
-            <p style="margin:0; color:#3c4043; font-size:13.5px;">Complete <strong>2 Days of Backlog CA</strong> (working sequentially, skipping Sundays).</p>
+            <h4 style="color:#007b83; margin:0 0 8px 0;">🔄 CA to Revise:</h4>
+            <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
+                1. <strong>Day-1 Revision:</strong> {yest_dt.strftime('%d %B %Y')} CA<br>
+                2. <strong>Day-3 Revision:</strong> {rep3_dt.strftime('%d %B %Y')} CA
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
