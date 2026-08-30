@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom CSS for Red/Green Date Numbers and Clean Layout
+# Custom CSS for Minimalist UI and Compact Calendar
 st.markdown(
     """
 <style>
@@ -45,7 +45,7 @@ st.markdown(
         text-transform: uppercase;
     }
 
-    /* Google Calendar Widget Frame */
+    /* Google Calendar Frame */
     .gcal-card {
         background: #ffffff;
         border: 1px solid #dadce0;
@@ -66,13 +66,13 @@ st.markdown(
         margin-bottom: 6px;
     }
 
+    /* Calendar Day Button Base */
     div.gcal-card div[data-testid="stHorizontalBlock"] button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 6px !important;
         padding: 0px !important;
         font-size: 14px !important;
-        font-weight: 700 !important;
         height: 34px !important;
         width: 100% !important;
         min-height: 34px !important;
@@ -176,10 +176,14 @@ def fetch_all_dates():
     q_res = supabase.table("quizzes").select("quiz_date").execute()
     v_res = supabase.table("vocab").select("vocab_date").execute()
     q_dates = (
-        {item["quiz_date"] for item in q_res.data} if q_res.data else set()
+        {str(item["quiz_date"]).strip() for item in q_res.data}
+        if q_res.data
+        else set()
     )
     v_dates = (
-        {item["vocab_date"] for item in v_res.data} if v_res.data else set()
+        {str(item["vocab_date"]).strip() for item in v_res.data}
+        if v_res.data
+        else set()
     )
     return q_dates, v_dates
   except Exception:
@@ -367,7 +371,7 @@ def get_backlog_dates_for(selected_dt):
   return [backlog_pool[target_b1_idx], backlog_pool[target_b2_idx]]
 
 
-# Mini Google Calendar (Red numbers for missing, Green numbers for present)
+# Mini Google Calendar with Guaranteed Red / Green Number Colors
 def render_mini_gcal(
     active_dates_set, on_select_callback, key_prefix="cal", allow_all=False
 ):
@@ -383,7 +387,7 @@ def render_mini_gcal(
     curr_year -= 1
 
   month_name = calendar.month_name[curr_month]
-  cal_obj = calendar.Calendar(firstweekday=6)
+  cal_obj = calendar.Calendar(firstweekday=6)  # Sunday start
   month_matrix = cal_obj.monthdayscalendar(curr_year, curr_month)
 
   st.markdown('<div class="gcal-card">', unsafe_allow_html=True)
@@ -413,7 +417,7 @@ def render_mini_gcal(
       unsafe_allow_html=True,
   )
 
-  dynamic_styles = "<style>\n"
+  css_rules = []
 
   for w_idx, week in enumerate(month_matrix):
     d_cols = st.columns(7)
@@ -428,13 +432,14 @@ def render_mini_gcal(
         has_item = d_str in active_dates_set
         btn_key = f"{key_prefix}_{d_str}_{w_idx}_{i}"
 
-        text_color = "#16a34a" if has_item else "#dc2626"
-        dynamic_styles += f"""
-                button[key="{btn_key}"] p, button[data-testid*="{btn_key}"] p, button[key="{btn_key}"] div {{
-                    color: {text_color} !important;
-                    font-weight: 800 !important;
-                }}
-                """
+        # Color: Pure Green if present, Pure Red if absent
+        color_hex = "#16a34a" if has_item else "#dc2626"
+        css_rules.append(
+            f'button[key="{btn_key}"] p, button[data-testid*="{btn_key}"] p,'
+            f' button[key="{btn_key}"] span, button[data-testid*="{btn_key}"]'
+            f" span {{ color: {color_hex} !important; font-weight: 800"
+            " !important; font-size: 14px !important; }"
+        )
 
         if d_cols[i].button(str(day), key=btn_key, use_container_width=True):
           if allow_all or has_item:
@@ -442,8 +447,10 @@ def render_mini_gcal(
           else:
             st.toast(f"No content uploaded for {d_str} yet!", icon="🔴")
 
-  dynamic_styles += "</style>"
-  st.markdown(dynamic_styles, unsafe_allow_html=True)
+  st.markdown(
+      f"<style>{''.join(css_rules)}</style>",
+      unsafe_allow_html=True,
+  )
   st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -773,7 +780,7 @@ elif st.session_state.screen == "ca_exam":
         st.rerun()
 
 # ----------------------------------------------------
-# 6. TO-DO & REVISION PLANNER (STRICT CA SCHEDULE ONLY)
+# 6. TO-DO & REVISION PLANNER
 # ----------------------------------------------------
 elif st.session_state.screen == "todo":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -806,19 +813,20 @@ elif st.session_state.screen == "todo":
 
   if selected_dt < plan_start:
     st.info(
-        "ℹ️ The CA schedule starts on **Tuesday, 1 September 2026**. Select any"
-        " date from 1 Sept onwards."
+        "ℹ️ The fresh schedule starts on **Tuesday, 1 September 2026**. Tap"
+        " any date from 1 September onwards."
     )
   elif is_sunday:
-    # Calculate Monday through Saturday of this week
     monday_dt = selected_dt - timedelta(days=6)
     saturday_dt = selected_dt - timedelta(days=1)
+    if monday_dt < plan_start:
+      monday_dt = plan_start
     st.markdown(
         f"""
         <div class="todo-card" style="border-left: 5px solid #f9ab00;">
             <h4 style="color:#b06000; margin:0 0 6px 0;">🔄 CA to Revise: Weekly Revision</h4>
             <p style="margin:0; color:#202124; font-size:14px; line-height: 1.6;">
-                • Revise all CA from <strong>{monday_dt.strftime('%d %B')}</strong> to <strong>{saturday_dt.strftime('%d %B %Y')}</strong><br>
+                • Revise all CA covered from <strong>{monday_dt.strftime('%d %B')}</strong> to <strong>{saturday_dt.strftime('%d %B %Y')}</strong><br>
                 • <em>No new fresh CA or backlog today.</em>
             </p>
         </div>
@@ -827,8 +835,12 @@ elif st.session_state.screen == "todo":
     )
   else:
     backlog_days = get_backlog_dates_for(selected_dt)
-    b1_str = backlog_days[0].strftime("%d %B %Y") if backlog_days else "1 June 2026"
-    b2_str = backlog_days[1].strftime("%d %B %Y") if backlog_days else "2 June 2026"
+    b1_str = (
+        backlog_days[0].strftime("%d %B %Y") if backlog_days else "1 June 2026"
+    )
+    b2_str = (
+        backlog_days[1].strftime("%d %B %Y") if backlog_days else "2 June 2026"
+    )
 
     yest_dt = selected_dt - timedelta(days=1)
     if yest_dt.weekday() == 6:
@@ -837,6 +849,23 @@ elif st.session_state.screen == "todo":
     rep3_dt = selected_dt - timedelta(days=3)
     if rep3_dt.weekday() == 6:
       rep3_dt = rep3_dt - timedelta(days=1)
+
+    revision_items = []
+    if yest_dt >= plan_start:
+      revision_items.append(
+          f"1. <strong>Day-1 Revision:</strong> {yest_dt.strftime('%d %B %Y')} CA"
+      )
+    if rep3_dt >= plan_start:
+      prefix = "2" if revision_items else "1"
+      revision_items.append(
+          f"{prefix}. <strong>Day-3 Revision:</strong>"
+          f" {rep3_dt.strftime('%d %B %Y')} CA"
+      )
+
+    if not revision_items:
+      revision_text = "<em>None (Fresh Start Day - No previous revisions)</em>"
+    else:
+      revision_text = "<br>".join(revision_items)
 
     st.markdown(
         f"""
@@ -852,8 +881,7 @@ elif st.session_state.screen == "todo":
         <div class="todo-card" style="border-left: 5px solid #12b5cb;">
             <h4 style="color:#007b83; margin:0 0 8px 0;">🔄 CA to Revise:</h4>
             <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
-                1. <strong>Day-1 Revision:</strong> {yest_dt.strftime('%d %B %Y')} CA<br>
-                2. <strong>Day-3 Revision:</strong> {rep3_dt.strftime('%d %B %Y')} CA
+                {revision_text}
             </p>
         </div>
         """,
