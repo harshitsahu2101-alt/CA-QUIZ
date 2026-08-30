@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import json
 from google import genai
 from google.genai import types
@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom Zero-Lag Minimalist CSS
+# Custom Compact Google Calendar & Minimalist App CSS
 st.markdown(
     """
 <style>
@@ -33,110 +33,138 @@ st.markdown(
     .block-container { 
         padding-top: 1rem; 
         padding-bottom: 2rem; 
-        max-width: 720px; 
+        max-width: 580px; 
     }
     
     .app-title {
         text-align: center;
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
-        letter-spacing: 1.2px;
-        color: #1e3a8a;
-        margin-bottom: 16px;
+        letter-spacing: 1px;
+        color: #1a73e8;
+        margin-bottom: 12px;
         text-transform: uppercase;
     }
 
-    /* Google Calendar Navigation Bar */
+    /* Authentic Compact Google Calendar Widget */
+    .gcal-card {
+        background: #ffffff;
+        border: 1px solid #dadce0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.06);
+        margin: 10px auto 16px auto;
+        max-width: 440px;
+    }
+
+    .gcal-month-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Google Sans', Roboto, sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        color: #3c4043;
+        margin-bottom: 8px;
+    }
+
     .gcal-weekdays {
-        background-color: #3b69a8;
-        color: #ffffff;
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         text-align: center;
-        font-weight: 700;
-        font-size: 13px;
-        padding: 6px 0px;
+        font-weight: 600;
+        font-size: 11px;
+        color: #70757a;
+        margin-bottom: 4px;
     }
 
-    div[data-testid="stHorizontalBlock"] button {
-        background-color: #ffffff !important;
-        color: #1f2937 !important;
-        border: 1px solid #d1d5db !important;
-        border-radius: 0px !important;
-        padding: 6px 0px !important;
+    /* Mini Compact Calendar Day Buttons */
+    div.gcal-card div[data-testid="stHorizontalBlock"] button {
+        background-color: transparent !important;
+        color: #3c4043 !important;
+        border: none !important;
+        border-radius: 50% !important;
+        padding: 0px !important;
         font-size: 12px !important;
-        font-weight: 600 !important;
-        min-height: 42px !important;
-        margin: 0px !important;
+        font-weight: 500 !important;
+        height: 32px !important;
+        width: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        margin: 1px auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    div[data-testid="stHorizontalBlock"] button:hover {
-        background-color: #e0e7ff !important;
-        border-color: #3b82f6 !important;
+
+    div.gcal-card div[data-testid="stHorizontalBlock"] button:hover {
+        background-color: #f1f3f4 !important;
+        color: #1a73e8 !important;
     }
 
     /* CBT Exam Header Banner */
     .cbt-banner {
-        background-color: #2b5797;
+        background-color: #1a73e8;
         color: white;
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: 6px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-weight: 600;
-        font-size: 14px;
-        margin-bottom: 15px;
+        font-size: 13px;
+        margin-bottom: 12px;
     }
 
     .question-panel {
         background: #ffffff;
-        padding: 20px;
-        border: 1px solid #cbd5e1;
+        padding: 16px;
+        border: 1px solid #dadce0;
         border-radius: 8px;
-        min-height: 320px;
+        min-height: 260px;
     }
 
     .palette-box {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
-        padding: 14px;
+        padding: 10px;
     }
 
     /* Learning & Summary Card */
     .learning-box {
         background: #f8fafc;
         border: 1px solid #cbd5e1;
-        border-left: 5px solid #2563eb;
-        padding: 16px 18px;
+        border-left: 4px solid #1a73e8;
+        padding: 12px 14px;
         border-radius: 0 8px 8px 0;
-        margin-top: 15px;
+        margin-top: 12px;
         color: #1e293b;
     }
     .learning-title {
         font-weight: 700;
-        font-size: 15px;
-        margin-bottom: 8px;
-        color: #1e3a8a;
+        font-size: 14px;
+        margin-bottom: 6px;
+        color: #1a73e8;
     }
 
     /* Flashcard Card Layout */
     .flashcard {
         background: #ffffff;
-        border: 2px solid #3b82f6;
+        border: 1.5px solid #1a73e8;
         border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
+        padding: 20px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        margin-bottom: 16px;
     }
 
     .todo-card {
         background: #ffffff;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        padding: 16px 20px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        border-radius: 8px;
+        border: 1px solid #dadce0;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
     div[data-testid="stRadio"] > label { display: none; }
@@ -159,7 +187,7 @@ supabase = (
 )
 
 
-# Cached Database Queries for Zero-Lag Navigation
+# Cached Database Queries
 @st.cache_data(ttl=60)
 def fetch_all_dates():
   if not supabase:
@@ -209,7 +237,6 @@ def extract_pdf_text(uploaded_file):
   return text
 
 
-# AI Extraction: Exhaustive Banking MCQs with Complete Point Summaries
 def process_ca_pdf(pdf_text):
   prompt = f"""
     You are an expert Banking Examination Creator (IBPS/SBI PO Mains).
@@ -242,14 +269,13 @@ def process_ca_pdf(pdf_text):
     {pdf_text}
     """
   response = client.models.generate_content(
-      model="gemini-3.6-flash",
+      model="gemini-2.5-flash",
       contents=prompt,
       config=types.GenerateContentConfig(response_mime_type="application/json"),
   )
   return json.loads(response.text)
 
 
-# AI Extraction: Vocab Flashcards with Mnemonics
 def process_vocab_content(file_bytes, is_pdf):
   prompt = """
     You are an expert Vocabulary Builder for Banking & Competitive Exams.
@@ -285,7 +311,7 @@ def process_vocab_content(file_bytes, is_pdf):
       if t:
         text += t + "\n"
     response = client.models.generate_content(
-        model="gemini-3.6-flash",
+        model="gemini-2.5-flash",
         contents=prompt + f"\nDocument text:\n{text}",
         config=types.GenerateContentConfig(
             response_mime_type="application/json"
@@ -294,7 +320,7 @@ def process_vocab_content(file_bytes, is_pdf):
   else:
     img = Image.open(file_bytes)
     response = client.models.generate_content(
-        model="gemini-3.6-flash",
+        model="gemini-2.5-flash",
         contents=[prompt, img],
         config=types.GenerateContentConfig(
             response_mime_type="application/json"
@@ -310,6 +336,8 @@ if "selected_ca_date" not in st.session_state:
   st.session_state.selected_ca_date = None
 if "selected_vocab_date" not in st.session_state:
   st.session_state.selected_vocab_date = None
+if "selected_todo_date" not in st.session_state:
+  st.session_state.selected_todo_date = date.today()
 if "month_offset" not in st.session_state:
   st.session_state.month_offset = 0
 if "card_idx" not in st.session_state:
@@ -322,8 +350,10 @@ uploaded_ca_dates, uploaded_vocab_dates = fetch_all_dates()
 st.markdown('<div class="app-title">Banking Prep</div>', unsafe_allow_html=True)
 
 
-# Helper: Render Unified Google Calendar
-def render_calendar(active_dates_set, on_select_callback):
+# Helper: Mini Google Calendar Widget
+def render_mini_gcal(
+    active_dates_set, on_select_callback, key_prefix="cal", allow_all=False
+):
   today = date.today()
   curr_year = today.year
   curr_month = today.month + st.session_state.month_offset
@@ -336,22 +366,24 @@ def render_calendar(active_dates_set, on_select_callback):
     curr_year -= 1
 
   month_name = calendar.month_name[curr_month]
-  cal_obj = calendar.Calendar(firstweekday=6)
+  cal_obj = calendar.Calendar(firstweekday=6)  # Sunday start like Google Cal
   month_matrix = cal_obj.monthdayscalendar(curr_year, curr_month)
 
-  nav_c1, nav_c2, nav_c3 = st.columns([1, 2, 1])
+  st.markdown('<div class="gcal-card">', unsafe_allow_html=True)
+
+  nav_c1, nav_c2, nav_c3 = st.columns([1, 4, 1])
   with nav_c1:
-    if st.button("◀ Prev Month", use_container_width=True):
+    if st.button("‹", key=f"{key_prefix}_prev", use_container_width=True):
       st.session_state.month_offset -= 1
       st.rerun()
   with nav_c2:
     st.markdown(
-        f"<div style='text-align:center; font-weight:700; font-size:16px;"
-        f" padding-top:6px;'>{month_name} {curr_year}</div>",
+        f"<div style='text-align:center; font-weight:700; font-size:14px;"
+        f" color:#3c4043;'>{month_name} {curr_year}</div>",
         unsafe_allow_html=True,
     )
   with nav_c3:
-    if st.button("Next Month ▶", use_container_width=True):
+    if st.button("›", key=f"{key_prefix}_next", use_container_width=True):
       st.session_state.month_offset += 1
       st.rerun()
 
@@ -364,30 +396,42 @@ def render_calendar(active_dates_set, on_select_callback):
       unsafe_allow_html=True,
   )
 
-  for week in month_matrix:
+  for w_idx, week in enumerate(month_matrix):
     d_cols = st.columns(7)
     for i, day in enumerate(week):
       if day == 0:
-        d_cols[i].button(
-            " ",
-            key=f"blank_{curr_year}_{curr_month}_{i}_{week[0]}",
-            disabled=True,
+        d_cols[i].markdown(
+            "<div style='height:32px;'></div>", unsafe_allow_html=True
         )
       else:
+        d_obj = date(curr_year, curr_month, day)
         d_str = f"{curr_year}-{curr_month:02d}-{day:02d}"
         has_item = d_str in active_dates_set
-        badge = "🟢" if has_item else "🔴"
+        is_today = d_obj == today
+
+        # Label styling: highlight uploaded or current day
+        if is_today:
+          label = f"🔵{day}" if not has_item else f"🟢{day}"
+        elif has_item:
+          label = f"🟢{day}"
+        else:
+          label = f"{day}"
+
         if d_cols[i].button(
-            f"{badge} {day}", key=f"btn_{d_str}", use_container_width=True
+            label,
+            key=f"{key_prefix}_{d_str}_{w_idx}_{i}",
+            use_container_width=True,
         ):
-          if has_item:
-            on_select_callback(d_str)
+          if allow_all or has_item:
+            on_select_callback(d_obj if allow_all else d_str)
           else:
-            st.toast(f"No content uploaded for {d_str} yet!", icon="🔴")
+            st.toast(f"No content uploaded for {d_str} yet!", icon="ℹ️")
+
+  st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ----------------------------------------------------
-# 1. HOME SCREEN (3 MINIMAL TILES)
+# 1. HOME SCREEN (3 TILES)
 # ----------------------------------------------------
 if st.session_state.screen == "home":
   t1, t2, t3 = st.columns(3)
@@ -400,12 +444,12 @@ if st.session_state.screen == "home":
       st.session_state.screen = "ca_hub"
       st.rerun()
   with t3:
-    if st.button("📋\n\nTo-Do List", use_container_width=True):
+    if st.button("📋\n\nPlanner", use_container_width=True):
       st.session_state.screen = "todo"
       st.rerun()
 
 # ----------------------------------------------------
-# 2. VOCAB HUB (CALENDAR + ADMIN UPLOAD)
+# 2. VOCAB HUB (MINI CALENDAR + UPLOAD)
 # ----------------------------------------------------
 elif st.session_state.screen == "vocab_hub":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -457,7 +501,7 @@ elif st.session_state.screen == "vocab_hub":
             st.success(f"Deleted vocab for {target_v_date}.")
             st.rerun()
 
-  st.write("### 📅 Select Date to Review Vocab")
+  st.write("##### 📅 Select Date to Review Vocab")
 
   def open_vocab(selected_date):
     st.session_state.selected_vocab_date = selected_date
@@ -465,7 +509,7 @@ elif st.session_state.screen == "vocab_hub":
     st.session_state.screen = "vocab_flashcards"
     st.rerun()
 
-  render_calendar(uploaded_vocab_dates, open_vocab)
+  render_mini_gcal(uploaded_vocab_dates, open_vocab, key_prefix="vocab_cal")
 
 # ----------------------------------------------------
 # 3. VOCAB FLASHCARDS VIEW
@@ -476,7 +520,7 @@ elif st.session_state.screen == "vocab_flashcards":
 
   nav_c1, nav_c2 = st.columns([1, 4])
   with nav_c1:
-    if st.button("📅 Change Date"):
+    if st.button("📅 Calendar"):
       st.session_state.screen = "vocab_hub"
       st.rerun()
 
@@ -491,17 +535,17 @@ elif st.session_state.screen == "vocab_flashcards":
   st.markdown(
       f"""
     <div class="flashcard">
-        <div style="font-size:13px; font-weight:700; color:#6b7280; text-transform:uppercase;">
+        <div style="font-size:12px; font-weight:700; color:#5f6368; text-transform:uppercase;">
             Word {c_idx + 1} of {total_words} • {item.get('part_of_speech', '')}
         </div>
-        <h2 style="color:#1e3a8a; margin: 8px 0 14px 0;">{item['word']}</h2>
-        <p style="font-size:16px; color:#1f2937; margin-bottom:14px;"><strong>Meaning:</strong> {item['meaning']}</p>
-        <div style="background:#eff6ff; border-left:4px solid #3b82f6; padding:12px; border-radius:0 6px 6px 0; margin-bottom:12px;">
-            <strong style="color:#1d4ed8;">🧠 Mnemonic Trick:</strong><br>
-            <span style="color:#1e293b;">{item['mnemonic']}</span>
+        <h2 style="color:#1a73e8; margin: 6px 0 12px 0;">{item['word']}</h2>
+        <p style="font-size:15px; color:#202124; margin-bottom:12px;"><strong>Meaning:</strong> {item['meaning']}</p>
+        <div style="background:#e8f0fe; border-left:4px solid #1a73e8; padding:10px 12px; border-radius:0 6px 6px 0; margin-bottom:12px;">
+            <strong style="color:#1967d2;">🧠 Mnemonic Trick:</strong><br>
+            <span style="color:#202124; font-size:14px;">{item['mnemonic']}</span>
         </div>
-        <p style="color:#374151; font-style:italic;"><strong>Example:</strong> "{item['example']}"</p>
-        <div style="margin-top:10px; font-size:13px; color:#4b5563;">
+        <p style="color:#3c4043; font-style:italic; font-size:14px;"><strong>Example:</strong> "{item['example']}"</p>
+        <div style="margin-top:8px; font-size:12px; color:#5f6368;">
             <strong>Synonyms:</strong> {', '.join(item.get('synonyms', []))} | <strong>Antonyms:</strong> {', '.join(item.get('antonyms', []))}
         </div>
     </div>
@@ -511,7 +555,7 @@ elif st.session_state.screen == "vocab_flashcards":
 
   f_col1, f_col2, f_col3 = st.columns([1, 2, 1])
   with f_col1:
-    if st.button("⬅️ Previous", use_container_width=True) and c_idx > 0:
+    if st.button("⬅️ Prev", use_container_width=True) and c_idx > 0:
       st.session_state.card_idx -= 1
       st.rerun()
   with f_col3:
@@ -523,7 +567,7 @@ elif st.session_state.screen == "vocab_flashcards":
       st.rerun()
 
 # ----------------------------------------------------
-# 4. CA QUIZ HUB (CALENDAR + ADMIN UPLOAD)
+# 4. CA QUIZ HUB (MINI CALENDAR + UPLOAD)
 # ----------------------------------------------------
 elif st.session_state.screen == "ca_hub":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -575,7 +619,7 @@ elif st.session_state.screen == "ca_hub":
             st.success(f"Deleted quiz for {target_ca_date}.")
             st.rerun()
 
-  st.write("### 📅 Select Date for CA Quiz")
+  st.write("##### 📅 Select Date for CA Quiz")
 
   def open_quiz(selected_date):
     st.session_state.selected_ca_date = selected_date
@@ -583,10 +627,10 @@ elif st.session_state.screen == "ca_hub":
     st.session_state.screen = "ca_exam"
     st.rerun()
 
-  render_calendar(uploaded_ca_dates, open_quiz)
+  render_mini_gcal(uploaded_ca_dates, open_quiz, key_prefix="ca_cal")
 
 # ----------------------------------------------------
-# 5. CA CBT EXAM CONSOLE (FULL SCREEN & ZERO LAG)
+# 5. CA CBT EXAM CONSOLE (ZERO LAG)
 # ----------------------------------------------------
 elif st.session_state.screen == "ca_exam":
   target_date_str = st.session_state.selected_ca_date
@@ -613,14 +657,14 @@ elif st.session_state.screen == "ca_exam":
     st.markdown(
         f"""
         <div class="cbt-banner" style="margin-bottom:0px;">
-            <span>General / Banking Awareness • {target_date_str}</span>
-            <span>Question {curr_idx + 1} of {total_q}</span>
+            <span>General Awareness • {target_date_str}</span>
+            <span>Q{curr_idx + 1}/{total_q}</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
   with top_b2:
-    if st.button("📅 Change Date", use_container_width=True):
+    if st.button("📅 Calendar", use_container_width=True):
       st.session_state.screen = "ca_hub"
       st.rerun()
 
@@ -631,7 +675,7 @@ elif st.session_state.screen == "ca_exam":
     st.markdown(
         f"""
         <div class="question-panel">
-            <h4 style="margin-top:0; color:#1e293b;">Q{curr_idx + 1}. {curr_q['question']}</h4>
+            <h4 style="margin-top:0; color:#202124; font-size:15px;">Q{curr_idx + 1}. {curr_q['question']}</h4>
         </div>
         """,
         unsafe_allow_html=True,
@@ -660,13 +704,13 @@ elif st.session_state.screen == "ca_exam":
       bullets = curr_q.get("news_bullets", [])
       if bullets:
         points_html = "".join(
-            [f"<li style='margin-bottom:8px;'>{b}</li>" for b in bullets]
+            [f"<li style='margin-bottom:6px;'>{b}</li>" for b in bullets]
         )
         st.markdown(
             f"""
             <div class="learning-box">
                 <div class="learning-title">📖 Complete News Breakdown:</div>
-                <ul style="margin:0; padding-left:20px;">
+                <ul style="margin:0; padding-left:18px; font-size:13.5px;">
                     {points_html}
                 </ul>
             </div>
@@ -677,11 +721,11 @@ elif st.session_state.screen == "ca_exam":
     st.markdown("<br>", unsafe_allow_html=True)
     b_c1, b_c2, b_c3 = st.columns([1, 1, 1])
     with b_c1:
-      if st.button("⬅️ Previous", use_container_width=True) and curr_idx > 0:
+      if st.button("⬅️ Prev", use_container_width=True) and curr_idx > 0:
         st.session_state.current_q_idx -= 1
         st.rerun()
     with b_c2:
-      if st.button("Clear Response", use_container_width=True):
+      if st.button("Clear", use_container_width=True):
         user_ans.pop(curr_idx, None)
         st.rerun()
     with b_c3:
@@ -696,7 +740,7 @@ elif st.session_state.screen == "ca_exam":
     st.markdown(
         """
         <div class="palette-box">
-            <div style="font-weight:700; text-align:center; margin-bottom:8px;">Question Palette</div>
+            <div style="font-weight:700; text-align:center; font-size:12px; margin-bottom:6px;">Palette</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -706,13 +750,13 @@ elif st.session_state.screen == "ca_exam":
       col = pal_cols[q_i % 4]
       icon = "🟢" if q_i in user_ans else "⚪"
       if col.button(
-          f"{icon} {q_i + 1}", key=f"cbt_{q_i}", use_container_width=True
+          f"{icon}{q_i + 1}", key=f"cbt_{q_i}", use_container_width=True
       ):
         st.session_state.current_q_idx = q_i
         st.rerun()
 
 # ----------------------------------------------------
-# 6. TO-DO & REVISION PLANNER TILE
+# 6. TO-DO & REVISION PLANNER (WITH INTERACTIVE GCAL)
 # ----------------------------------------------------
 elif st.session_state.screen == "todo":
   nav_c1, nav_c2 = st.columns([1, 4])
@@ -721,50 +765,62 @@ elif st.session_state.screen == "todo":
       st.session_state.screen = "home"
       st.rerun()
 
-  today_dt = date.today()
-  is_sunday = today_dt.weekday() == 6
+  st.write("##### 📅 Select Any Date to View Targets")
 
-  st.write(f"### 📋 Daily Targets for {today_dt.strftime('%A, %d %B %Y')}")
+  def select_todo_date(chosen_date):
+    st.session_state.selected_todo_date = chosen_date
+    st.rerun()
+
+  render_mini_gcal(
+      set(), select_todo_date, key_prefix="todo_cal", allow_all=True
+  )
+
+  selected_dt = st.session_state.selected_todo_date
+  is_sunday = selected_dt.weekday() == 6
+
+  st.markdown(
+      f"#### 🎯 Targets for **{selected_dt.strftime('%A, %d %B %Y')}**"
+  )
 
   if is_sunday:
     st.markdown(
         """
-        <div class="todo-card" style="border-left: 5px solid #eab308;">
-            <h4 style="color:#854d0e; margin:0 0 6px 0;">🌟 Sunday Comprehensive Revision</h4>
-            <p style="margin:0; color:#713f12;">No new daily CA today! Revise all Current Affairs and Vocab covered from <strong>Monday to Saturday</strong> this week.</p>
+        <div class="todo-card" style="border-left: 5px solid #f9ab00;">
+            <h4 style="color:#b06000; margin:0 0 6px 0;">🌟 Sunday Comprehensive Revision</h4>
+            <p style="margin:0; color:#3c4043; font-size:14px;">No new daily CA today! Revise all Current Affairs and Vocab covered from <strong>Monday to Saturday</strong> this week.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
   else:
-    yest_dt = today_dt - timedelta(days=1)
+    yest_dt = selected_dt - timedelta(days=1)
     if yest_dt.weekday() == 6:
       yest_dt = yest_dt - timedelta(days=1)
 
-    rep3_dt = today_dt - timedelta(days=3)
+    rep3_dt = selected_dt - timedelta(days=3)
     if rep3_dt.weekday() == 6:
       rep3_dt = rep3_dt - timedelta(days=1)
 
     st.markdown(
         f"""
-        <div class="todo-card" style="border-left: 5px solid #2563eb;">
-            <h4 style="color:#1e40af; margin:0 0 4px 0;">🎯 Target 1: Today's Fresh CA & Vocab</h4>
-            <p style="margin:0; color:#334155;">Complete CA Quiz & Vocab for <strong>{today_dt.strftime('%d %B %Y')}</strong>.</p>
+        <div class="todo-card" style="border-left: 5px solid #1a73e8;">
+            <h5 style="color:#1967d2; margin:0 0 4px 0;">🎯 Target 1: Today's Fresh CA & Vocab</h5>
+            <p style="margin:0; color:#3c4043; font-size:13.5px;">Complete CA Quiz & Vocab for <strong>{selected_dt.strftime('%d %B %Y')}</strong>.</p>
         </div>
         
-        <div class="todo-card" style="border-left: 5px solid #0891b2;">
-            <h4 style="color:#0e7490; margin:0 0 4px 0;">🔁 Target 2: Day-1 Spaced Revision</h4>
-            <p style="margin:0; color:#334155;">Revise CA Quiz & Vocab of <strong>{yest_dt.strftime('%d %B %Y')}</strong>.</p>
+        <div class="todo-card" style="border-left: 5px solid #12b5cb;">
+            <h5 style="color:#007b83; margin:0 0 4px 0;">🔁 Target 2: Day-1 Spaced Revision</h5>
+            <p style="margin:0; color:#3c4043; font-size:13.5px;">Revise CA Quiz & Vocab of <strong>{yest_dt.strftime('%d %B %Y')}</strong>.</p>
         </div>
         
-        <div class="todo-card" style="border-left: 5px solid #9333ea;">
-            <h4 style="color:#7e22ce; margin:0 0 4px 0;">🔄 Target 3: Day-3 Spaced Revision</h4>
-            <p style="margin:0; color:#334155;">Revise CA Quiz & Vocab of <strong>{rep3_dt.strftime('%d %B %Y')}</strong>.</p>
+        <div class="todo-card" style="border-left: 5px solid #a142f4;">
+            <h5 style="color:#8430ce; margin:0 0 4px 0;">🔄 Target 3: Day-3 Spaced Revision</h5>
+            <p style="margin:0; color:#3c4043; font-size:13.5px;">Revise CA Quiz & Vocab of <strong>{rep3_dt.strftime('%d %B %Y')}</strong>.</p>
         </div>
 
-        <div class="todo-card" style="border-left: 5px solid #ea580c;">
-            <h4 style="color:#c2410c; margin:0 0 4px 0;">📚 Target 4: Backlog Clearing</h4>
-            <p style="margin:0; color:#334155;">Complete <strong>2 Days of Backlog CA</strong> (starting from July sequence, skipping Sundays).</p>
+        <div class="todo-card" style="border-left: 5px solid #fa7b17;">
+            <h5 style="color:#c53929; margin:0 0 4px 0;">📚 Target 4: Backlog Clearing</h5>
+            <p style="margin:0; color:#3c4043; font-size:13.5px;">Complete <strong>2 Days of Backlog CA</strong> (working sequentially, skipping Sundays).</p>
         </div>
         """,
         unsafe_allow_html=True,
