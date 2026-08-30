@@ -155,9 +155,9 @@ admin_password = st.secrets.get("ADMIN_PASSWORD", "Harshit@2101")
 
 supabase = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
-# Direct REST Caller for Gemini (Supports AQ. and AIza keys seamlessly)
+# Direct REST Caller for Gemini 3.6 Flash
 def call_gemini_rest(prompt_text, inline_data=None):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": gemini_key
