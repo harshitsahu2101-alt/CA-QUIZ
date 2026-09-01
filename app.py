@@ -8,7 +8,7 @@ import pypdf
 import streamlit as st
 from supabase import create_client
 
-# Page Setup
+# Page Setup: Use Wide Mode
 st.set_page_config(
     page_title="Banking Prep",
     page_icon="🏦",
@@ -16,9 +16,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Minimalist Layout CSS
+# Responsive Full-Width Layout CSS
 st.markdown("""
 <style>
+    /* Suppress Streamlit headers, deploy buttons, and watermarks */
     header[data-testid="stHeader"], #MainMenu, footer, 
     div[data-testid="stToolbar"], div[data-testid="stDecoration"],
     [data-testid="stStatusWidget"], .stDeployButton, .viewerBadge_container__r5tak,
@@ -28,30 +29,37 @@ st.markdown("""
         height: 0px !important;
     }
     
+    /* Full-Screen Landscape Responsive Container */
     .block-container { 
-        padding-top: 1rem; 
-        padding-bottom: 2rem; 
-        max-width: 580px; 
+        padding-top: 1rem !important; 
+        padding-bottom: 2rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        max-width: 1200px !important; 
+        width: 95% !important;
+        margin: 0 auto !important;
     }
     
     .app-title {
         text-align: center;
-        font-size: 22px;
+        font-size: 26px;
         font-weight: 800;
         letter-spacing: 1px;
         color: #1a73e8;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
         text-transform: uppercase;
     }
 
+    /* Google Calendar Widget Frame */
     .gcal-card {
         background: #ffffff;
         border: 1px solid #dadce0;
         border-radius: 12px;
-        padding: 12px 14px;
+        padding: 14px 18px;
         box-shadow: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.06);
-        margin: 10px auto 16px auto;
-        max-width: 440px;
+        margin: 10px auto 20px auto;
+        max-width: 650px;
+        width: 100%;
     }
 
     .gcal-weekdays {
@@ -59,20 +67,20 @@ st.markdown("""
         grid-template-columns: repeat(7, 1fr);
         text-align: center;
         font-weight: 700;
-        font-size: 12px;
+        font-size: 13px;
         color: #5f6368;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
     }
 
     div.gcal-card div[data-testid="stHorizontalBlock"] button {
         background-color: transparent !important;
         border: 1px solid #e2e8f0 !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         padding: 0px !important;
-        height: 34px !important;
+        height: 38px !important;
         width: 100% !important;
-        min-height: 34px !important;
-        max-height: 34px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
         margin: 1px auto !important;
     }
 
@@ -84,63 +92,64 @@ st.markdown("""
     .cbt-banner {
         background-color: #1a73e8;
         color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 10px 16px;
+        border-radius: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-weight: 600;
-        font-size: 13px;
-        margin-bottom: 12px;
+        font-size: 15px;
+        margin-bottom: 14px;
     }
 
     .question-panel {
         background: #ffffff;
-        padding: 16px;
+        padding: 20px;
         border: 1px solid #dadce0;
-        border-radius: 8px;
+        border-radius: 10px;
         min-height: 240px;
     }
 
     .palette-box {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 10px;
+        border-radius: 10px;
+        padding: 14px;
     }
 
     .learning-box {
         background: #f8fafc;
         border: 1px solid #cbd5e1;
-        border-left: 4px solid #1a73e8;
-        padding: 12px 14px;
-        border-radius: 0 8px 8px 0;
-        margin-top: 12px;
+        border-left: 5px solid #1a73e8;
+        padding: 14px 18px;
+        border-radius: 0 10px 10px 0;
+        margin-top: 14px;
         color: #1e293b;
     }
+    
     .learning-title {
         font-weight: 700;
-        font-size: 14px;
-        margin-bottom: 6px;
+        font-size: 15px;
+        margin-bottom: 8px;
         color: #1a73e8;
     }
 
     .flashcard {
         background: #ffffff;
         border: 1.5px solid #1a73e8;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-        margin-bottom: 16px;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 18px;
     }
 
     .todo-card {
         background: #ffffff;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid #dadce0;
-        padding: 14px 18px;
-        margin-bottom: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        padding: 16px 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
 
     div[data-testid="stRadio"] > label { display: none; }
@@ -348,7 +357,7 @@ def get_backlog_dates_for(selected_dt):
     
     return [backlog_pool[target_b1_idx], backlog_pool[target_b2_idx]]
 
-# Mini Google Calendar
+# Mini Google Calendar Widget
 def render_mini_gcal(active_dates_set, on_select_callback, key_prefix="cal", allow_all=False):
     today = date.today()
     curr_year = today.year
@@ -367,13 +376,13 @@ def render_mini_gcal(active_dates_set, on_select_callback, key_prefix="cal", all
 
     st.markdown('<div class="gcal-card">', unsafe_allow_html=True)
     
-    nav_c1, nav_c2, nav_c3 = st.columns([1, 4, 1])
+    nav_c1, nav_c2, nav_c3 = st.columns([1, 6, 1])
     with nav_c1:
         if st.button("‹", key=f"{key_prefix}_prev", use_container_width=True):
             st.session_state.month_offset -= 1
             st.rerun()
     with nav_c2:
-        st.markdown(f"<div style='text-align:center; font-weight:700; font-size:14px; color:#3c4043;'>{month_name} {curr_year}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:center; font-weight:700; font-size:15px; color:#3c4043;'>{month_name} {curr_year}</div>", unsafe_allow_html=True)
     with nav_c3:
         if st.button("›", key=f"{key_prefix}_next", use_container_width=True):
             st.session_state.month_offset += 1
@@ -389,7 +398,7 @@ def render_mini_gcal(active_dates_set, on_select_callback, key_prefix="cal", all
         d_cols = st.columns(7)
         for i, day in enumerate(week):
             if day == 0:
-                d_cols[i].markdown("<div style='height:34px;'></div>", unsafe_allow_html=True)
+                d_cols[i].markdown("<div style='height:38px;'></div>", unsafe_allow_html=True)
             else:
                 d_obj = date(curr_year, curr_month, day)
                 d_str = f"{curr_year}-{curr_month:02d}-{day:02d}"
@@ -407,9 +416,10 @@ def render_mini_gcal(active_dates_set, on_select_callback, key_prefix="cal", all
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------------------------------
-# 1. HOME SCREEN
+# 1. HOME SCREEN (FULL-WIDTH TILES)
 # ----------------------------------------------------
 if st.session_state.screen == "home":
+    st.markdown("<br>", unsafe_allow_html=True)
     t1, t2, t3 = st.columns(3)
     with t1:
         if st.button("📖\n\nDaily Vocab", use_container_width=True):
@@ -428,7 +438,7 @@ if st.session_state.screen == "home":
 # 2. VOCAB HUB
 # ----------------------------------------------------
 elif st.session_state.screen == "vocab_hub":
-    nav_c1, nav_c2 = st.columns([1, 4])
+    nav_c1, nav_c2 = st.columns([1, 6])
     with nav_c1:
         if st.button("⬅️ Home"):
             st.session_state.screen = "home"
@@ -481,7 +491,7 @@ elif st.session_state.screen == "vocab_flashcards":
     target_date = st.session_state.selected_vocab_date
     words = get_vocab_data(target_date)
     
-    nav_c1, nav_c2 = st.columns([1, 4])
+    nav_c1, nav_c2 = st.columns([1, 6])
     with nav_c1:
         if st.button("📅 Calendar"):
             st.session_state.screen = "vocab_hub"
@@ -497,23 +507,23 @@ elif st.session_state.screen == "vocab_flashcards":
     
     st.markdown(f"""
     <div class="flashcard">
-        <div style="font-size:12px; font-weight:700; color:#5f6368; text-transform:uppercase;">
+        <div style="font-size:13px; font-weight:700; color:#5f6368; text-transform:uppercase;">
             Word {c_idx + 1} of {total_words} • {item.get('part_of_speech', '')}
         </div>
-        <h2 style="color:#1a73e8; margin: 6px 0 12px 0;">{item['word']}</h2>
-        <p style="font-size:15px; color:#202124; margin-bottom:12px;"><strong>Meaning:</strong> {item['meaning']}</p>
-        <div style="background:#e8f0fe; border-left:4px solid #1a73e8; padding:10px 12px; border-radius:0 6px 6px 0; margin-bottom:12px;">
-            <strong style="color:#1967d2;">🧠 Mnemonic Trick:</strong><br>
-            <span style="color:#202124; font-size:14px;">{item['mnemonic']}</span>
+        <h2 style="color:#1a73e8; margin: 8px 0 14px 0; font-size:26px;">{item['word']}</h2>
+        <p style="font-size:16px; color:#202124; margin-bottom:14px;"><strong>Meaning:</strong> {item['meaning']}</p>
+        <div style="background:#e8f0fe; border-left:4px solid #1a73e8; padding:12px 14px; border-radius:0 8px 8px 0; margin-bottom:14px;">
+            <strong style="color:#1967d2; font-size:15px;">🧠 Mnemonic Trick:</strong><br>
+            <span style="color:#202124; font-size:14.5px;">{item['mnemonic']}</span>
         </div>
-        <p style="color:#3c4043; font-style:italic; font-size:14px;"><strong>Example:</strong> "{item['example']}"</p>
-        <div style="margin-top:8px; font-size:12px; color:#5f6368;">
+        <p style="color:#3c4043; font-style:italic; font-size:15px;"><strong>Example:</strong> "{item['example']}"</p>
+        <div style="margin-top:10px; font-size:13px; color:#5f6368;">
             <strong>Synonyms:</strong> {', '.join(item.get('synonyms', []))} | <strong>Antonyms:</strong> {', '.join(item.get('antonyms', []))}
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    f_col1, f_col2, f_col3 = st.columns([1, 2, 1])
+    f_col1, f_col2, f_col3 = st.columns([1, 4, 1])
     with f_col1:
         if st.button("⬅️ Prev", use_container_width=True) and c_idx > 0:
             st.session_state.card_idx -= 1
@@ -527,7 +537,7 @@ elif st.session_state.screen == "vocab_flashcards":
 # 4. CA QUIZ HUB
 # ----------------------------------------------------
 elif st.session_state.screen == "ca_hub":
-    nav_c1, nav_c2 = st.columns([1, 4])
+    nav_c1, nav_c2 = st.columns([1, 6])
     with nav_c1:
         if st.button("⬅️ Home"):
             st.session_state.screen = "home"
@@ -574,7 +584,7 @@ elif st.session_state.screen == "ca_hub":
     render_mini_gcal(uploaded_ca_dates, open_quiz, key_prefix="ca_cal")
 
 # ----------------------------------------------------
-# 5. CA CBT EXAM CONSOLE
+# 5. CA CBT EXAM CONSOLE (LANDSCAPE-OPTIMIZED 3:1 SPLIT)
 # ----------------------------------------------------
 elif st.session_state.screen == "ca_exam":
     target_date_str = st.session_state.selected_ca_date
@@ -596,12 +606,12 @@ elif st.session_state.screen == "ca_exam":
     curr_q = questions[curr_idx]
     user_ans = st.session_state[f"ans_{target_date_str}"]
 
-    top_b1, top_b2 = st.columns([3, 1])
+    top_b1, top_b2 = st.columns([5, 1])
     with top_b1:
         st.markdown(f"""
-        <div class="cbt-banner" style="margin-bottom:0px;">
+        <div class="cbt-banner">
             <span>General Awareness • {target_date_str}</span>
-            <span>Q{curr_idx + 1}/{total_q}</span>
+            <span>Question {curr_idx + 1} of {total_q}</span>
         </div>
         """, unsafe_allow_html=True)
     with top_b2:
@@ -609,13 +619,12 @@ elif st.session_state.screen == "ca_exam":
             st.session_state.screen = "ca_hub"
             st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    left_pane, right_pane = st.columns([2.5, 1])
+    left_pane, right_pane = st.columns([3.2, 1.2])
     
     with left_pane:
         st.markdown(f"""
         <div class="question-panel">
-            <h4 style="margin-top:0; color:#202124; font-size:15px;">Q{curr_idx + 1}. {curr_q['question']}</h4>
+            <h4 style="margin-top:0; color:#202124; font-size:16px; line-height:1.5;">Q{curr_idx + 1}. {curr_q['question']}</h4>
         </div>
         """, unsafe_allow_html=True)
         
@@ -643,7 +652,7 @@ elif st.session_state.screen == "ca_exam":
                 st.markdown(f"""
                 <div class="learning-box">
                     <div class="learning-title">📖 Complete News Breakdown:</div>
-                    <ul style="margin:0; padding-left:18px; font-size:13.5px;">
+                    <ul style="margin:0; padding-left:18px; font-size:14px; line-height:1.6;">
                         {points_html}
                     </ul>
                 </div>
@@ -667,7 +676,7 @@ elif st.session_state.screen == "ca_exam":
     with right_pane:
         st.markdown("""
         <div class="palette-box">
-            <div style="font-weight:700; text-align:center; font-size:12px; margin-bottom:6px;">Palette</div>
+            <div style="font-weight:700; text-align:center; font-size:13px; margin-bottom:8px;">Question Palette</div>
         </div>
         """, unsafe_allow_html=True)
         pal_cols = st.columns(4)
@@ -682,7 +691,7 @@ elif st.session_state.screen == "ca_exam":
 # 6. TO-DO & REVISION PLANNER
 # ----------------------------------------------------
 elif st.session_state.screen == "todo":
-    nav_c1, nav_c2 = st.columns([1, 4])
+    nav_c1, nav_c2 = st.columns([1, 6])
     with nav_c1:
         if st.button("⬅️ Home"):
             st.session_state.screen = "home"
@@ -712,7 +721,7 @@ elif st.session_state.screen == "todo":
         st.markdown(f"""
         <div class="todo-card" style="border-left: 5px solid #f9ab00;">
             <h4 style="color:#b06000; margin:0 0 6px 0;">🌟 Sunday Weekly Mega Revision</h4>
-            <p style="margin:0; color:#202124; font-size:14px; line-height: 1.6;">
+            <p style="margin:0; color:#202124; font-size:14.5px; line-height: 1.6;">
                 • Revise all <strong>Fresh & Backlog CA</strong> completed from <strong>{monday_dt.strftime('%d %B')}</strong> to <strong>{saturday_dt.strftime('%d %B %Y')}</strong>.<br>
                 • <em>No new fresh CA or backlog today.</em>
             </p>
@@ -759,7 +768,7 @@ elif st.session_state.screen == "todo":
         st.markdown(f"""
         <div class="todo-card" style="border-left: 5px solid #1a73e8;">
             <h4 style="color:#1a73e8; margin:0 0 8px 0;">📖 CA to Do Today (3 Days Total):</h4>
-            <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
+            <p style="margin:0; color:#202124; font-size:14.5px; line-height: 1.8;">
                 1. <strong>Today's Fresh CA:</strong> {selected_dt.strftime('%d %B %Y')}<br>
                 2. <strong>Backlog CA (Day 1):</strong> {b1_str}<br>
                 3. <strong>Backlog CA (Day 2):</strong> {b2_str}
@@ -768,7 +777,7 @@ elif st.session_state.screen == "todo":
         
         <div class="todo-card" style="border-left: 5px solid #12b5cb;">
             <h4 style="color:#007b83; margin:0 0 8px 0;">🔄 CA to Revise:</h4>
-            <p style="margin:0; color:#202124; font-size:14px; line-height: 1.8;">
+            <p style="margin:0; color:#202124; font-size:14.5px; line-height: 1.8;">
                 {revision_html}
             </p>
         </div>
